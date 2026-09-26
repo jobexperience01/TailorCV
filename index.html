@@ -4470,6 +4470,9 @@ function initFirebase() {
   try { firebase.initializeApp(firebaseConfig); } catch (e) { console.error('Firebase init failed', e); return; }
   fbReady = true;
   firebase.auth().onAuthStateChanged(onAuthChange);
+  firebase.auth().getRedirectResult().catch(function(e){
+    alert('Redirect sign-in error: ' + e.code + ' — ' + e.message);
+  });
 }
 
 function setAuthGateMode(mode, msg) {
@@ -4502,7 +4505,9 @@ async function onAuthChange(user) {
 
 function fbSignIn() {
   if (!fbReady) { alert('Cloud sign-in is not configured yet — fill in firebaseConfig first.'); return; }
-  firebase.auth().signInWithRedirect(new firebase.auth.GoogleAuthProvider());
+  firebase.auth().signInWithRedirect(new firebase.auth.GoogleAuthProvider()).catch(function(e){
+    alert('Sign-in start error: ' + e.code + ' — ' + e.message);
+  });
 }
 function fbSignOut() { if (fbReady) firebase.auth().signOut(); }
 
