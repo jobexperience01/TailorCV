@@ -390,12 +390,20 @@ html, body {
   #pages { display: block; }
   .resume-page { transform: none !important; margin: 0 !important; box-shadow: none !important; height: 296.5mm; break-after: page; page-break-after: always; }
   .resume-page:last-child { break-after: auto; page-break-after: auto; }
-  .manual-refresh-btn { display: none !important; }
+  .app-footer-bar { display: none !important; }
+}
+/* Footer action bar (Log out / Refresh) — sits at the bottom of each page's
+   content instead of floating fixed on screen. */
+.app-footer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid #dde1e6;
 }
 .manual-refresh-btn {
-  position: fixed;
-  right: 14px;
-  z-index: 99999;
   background: linear-gradient(180deg, #1F8A5B 0%, #17734A 100%);
   color: #fff;
   border: 1px solid #125C3B;
@@ -407,9 +415,10 @@ html, body {
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0,0,0,.28);
 }
+.manual-refresh-btn.ag-signout-variant { background: linear-gradient(180deg, #586069 0%, #444d56 100%); border-color: #333a40; }
 .manual-refresh-btn:hover { background: linear-gradient(180deg, #17734A 0%, #125C3B 100%); }
+.manual-refresh-btn.ag-signout-variant:hover { background: linear-gradient(180deg, #444d56 0%, #333a40 100%); }
 .manual-refresh-btn:active { background: #0F4D31; }
-#manual-refresh-top { top: 10px; }
 .exp-company.exp-cont { margin-bottom: 4pt; }
 .cont-tag { font-weight: 400; font-style: normal; color: var(--muted); }
 .chip{display:inline-block;padding:1px 8px;margin:2px;border-radius:10px;font-size:11px}
@@ -474,6 +483,33 @@ html, body {
 .atsc-plan-tbl th:first-child, .atsc-plan-tbl td:first-child { text-align: left; }
 .atsc-plan-tbl thead th { background: #f6f8f7; position: sticky; top: 0; }
 .wiz-card .atsc-plan-tbl input { width: auto; margin: 0; padding: 0; }
+
+/* ========== AUTH GATE (Sign in / Create account / Forgot password) ========== */
+#auth-gate h2 { margin: 0 0 6px; font-size: 18px; }
+#auth-gate .ag-view { display: none; flex-direction: column; gap: 8px; text-align: left; }
+#auth-gate .ag-view.active { display: flex; }
+#auth-gate .ag-lead { margin: 0 0 14px; font-size: 13px; color: #c7d0da; line-height: 1.5; text-align: center; }
+#auth-gate .ag-input {
+  padding: 10px 12px; border-radius: 8px; border: 1px solid #46525f;
+  background: #182430; color: #fff; font-size: 14px; width: 100%;
+}
+#auth-gate .ag-btn-primary {
+  background: #fff; color: #1f2937; border: none; border-radius: 8px;
+  padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 2px;
+}
+#auth-gate .ag-btn-ghost {
+  background: transparent; color: #c7d0da; border: 1px solid #46525f;
+  border-radius: 8px; padding: 9px 16px; font-size: 13px; cursor: pointer;
+}
+#auth-gate .ag-error { margin: 0; font-size: 12px; color: #f28b82; min-height: 14px; text-align: left; }
+#auth-gate .ag-error.ok { color: #8ee6a8; }
+#auth-gate .ag-links { display: flex; justify-content: space-between; margin-top: 2px; }
+#auth-gate .ag-link {
+  background: none; border: none; color: #8fa3b8; font-size: 12px;
+  text-decoration: underline; cursor: pointer; padding: 4px 0;
+}
+#auth-gate .ag-back { align-self: center; margin-top: 6px; }
+#auth-gate .ag-icon { font-size: 26px; margin-bottom: 10px; }
 </style>
 <!-- Reads PDF text client-side so the extraction prompt can include the resume's actual content -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -491,34 +527,64 @@ html, body {
 <div id="auth-gate" style="display:none;position:fixed;inset:0;z-index:99998;background:#0f1720;color:#fff;
   align-items:center;justify-content:center;font-family:inherit;text-align:center;padding:24px;">
   <div style="max-width:360px;width:100%;">
-    <div style="font-size:28px;margin-bottom:10px;">🔒</div>
-    <h2 style="margin:0 0 10px;font-size:18px;">Sign in to continue</h2>
-    <p class="ag-msg" style="margin:0 0 18px;font-size:13px;color:#c7d0da;line-height:1.5;"></p>
-    <div data-ag-show="signed-out" style="display:flex;flex-direction:column;gap:8px;text-align:left;">
-      <input type="email" id="ag-email" placeholder="Email" autocomplete="email"
-        style="padding:10px 12px;border-radius:8px;border:1px solid #46525f;background:#182430;color:#fff;font-size:14px;">
-      <input type="password" id="ag-password" placeholder="Password" autocomplete="current-password"
-        style="padding:10px 12px;border-radius:8px;border:1px solid #46525f;background:#182430;color:#fff;font-size:14px;">
-      <p id="ag-error" style="margin:0;font-size:12px;color:#f28b82;min-height:14px;"></p>
-      <button type="button" onclick="fbContinue()"
-        style="background:#fff;color:#1f2937;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;">
-        Continue
-      </button>
-      <button type="button" onclick="fbForgotPassword()"
-        style="background:none;border:none;color:#8fa3b8;font-size:12px;text-decoration:underline;cursor:pointer;padding:4px;align-self:center;">
-        Forgot password?
-      </button>
+    <div class="ag-icon">🔒</div>
+
+    <!-- SIGN IN -->
+    <div class="ag-view active" data-ag-view="login">
+      <h2>Sign in to continue</h2>
+      <p class="ag-lead">Enter your email and password to access your saved resumes.</p>
+      <input type="email" id="ag-login-email" class="ag-input" placeholder="Email" autocomplete="email">
+      <input type="password" id="ag-login-password" class="ag-input" placeholder="Password" autocomplete="current-password">
+      <p id="ag-login-error" class="ag-error"></p>
+      <button type="button" class="ag-btn-primary" onclick="fbLogin()">Sign In</button>
+      <div class="ag-links">
+        <button type="button" class="ag-link" onclick="agShowView('forgot')">Forgot password?</button>
+        <button type="button" class="ag-link" onclick="agShowView('signup')">Create account</button>
+      </div>
     </div>
-    <button type="button" onclick="fbSignOut()" data-ag-show="pending"
-      style="display:inline-flex;background:transparent;color:#c7d0da;border:1px solid #46525f;
-      border-radius:8px;padding:9px 16px;font-size:13px;cursor:pointer;">
-      Sign out
-    </button>
+
+    <!-- CREATE ACCOUNT -->
+    <div class="ag-view" data-ag-view="signup">
+      <h2>Create your account</h2>
+      <p class="ag-lead">Set an email and password to save and sync your resumes.</p>
+      <input type="email" id="ag-signup-email" class="ag-input" placeholder="Email" autocomplete="email">
+      <input type="password" id="ag-signup-password" class="ag-input" placeholder="Password (min. 6 characters)" autocomplete="new-password">
+      <input type="password" id="ag-signup-password2" class="ag-input" placeholder="Confirm password" autocomplete="new-password">
+      <p id="ag-signup-error" class="ag-error"></p>
+      <button type="button" class="ag-btn-primary" onclick="fbSignup()">Create Account</button>
+      <button type="button" class="ag-link ag-back" onclick="agShowView('login')">← Back to sign in</button>
+    </div>
+
+    <!-- FORGOT PASSWORD (email only) -->
+    <div class="ag-view" data-ag-view="forgot">
+      <h2>Reset your password</h2>
+      <p class="ag-lead">Enter your email and we'll send you a link to reset your password.</p>
+      <input type="email" id="ag-forgot-email" class="ag-input" placeholder="Email" autocomplete="email">
+      <p id="ag-forgot-error" class="ag-error"></p>
+      <button type="button" class="ag-btn-primary" onclick="fbSendReset()">Send reset link</button>
+      <button type="button" class="ag-link ag-back" onclick="agShowView('login')">← Back to sign in</button>
+    </div>
+
+    <!-- FORGOT PASSWORD — CONFIRMATION -->
+    <div class="ag-view" data-ag-view="forgot-sent">
+      <div class="ag-icon">📧</div>
+      <h2>Check your email</h2>
+      <p class="ag-lead">We've sent a password reset link to <b id="ag-sent-email"></b>. Open it to set a new password, then come back here and sign in.</p>
+      <button type="button" class="ag-btn-primary" onclick="agShowView('login')">← Back to sign in</button>
+    </div>
+
+    <!-- CHECKING ACCESS -->
+    <div class="ag-view" data-ag-view="checking">
+      <p class="ag-lead ag-msg"></p>
+    </div>
+
+    <!-- PENDING APPROVAL -->
+    <div class="ag-view" data-ag-view="pending">
+      <p class="ag-lead ag-msg"></p>
+      <button type="button" class="ag-btn-ghost" onclick="fbSignOut()">Sign out</button>
+    </div>
   </div>
 </div>
-
-<button type="button" id="manual-refresh-top" class="manual-refresh-btn" onclick="manualRefreshAll()" title="Clear all data and start over">⟳ Refresh</button>
-<button type="button" id="app-signout-btn" class="manual-refresh-btn" onclick="fbSignOut()" title="Sign out of your account" style="display:none;left:10px;right:auto;top:10px;">⎋ Log out</button>
 
 <!-- ==================== STEP 1: WIZARD ==================== -->
 <div id="wizard">
@@ -559,6 +625,30 @@ html, body {
       <div class="btn-row" style="margin:0 0 3px">
         <button type="button" class="btn btn-out" onclick="pdfimpLoadHistory()">Load selected</button>
         <button type="button" class="btn btn-out" onclick="pdfimpDeleteHistory()">Delete selected</button>
+      </div>
+    </div>
+
+    <div class="row2" style="margin-top:10px;align-items:end">
+      <div>
+        <label for="cloud-history-select">4. Cloud-synced versions (your signed-in account — newest 3 kept, auto-rotated)</label>
+        <select id="cloud-history-select"><option value="">— sign in to view —</option></select>
+      </div>
+      <div class="btn-row" style="margin:0 0 3px">
+        <button type="button" class="btn btn-out" id="cloud-history-load-btn" onclick="cloudLoadHistorySelected()">Load Data</button>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top:2px">
+      <button type="button" class="btn btn-out" onclick="cloudPinSelected()">📌 Pin selected version permanently</button>
+    </div>
+
+    <div class="row2" style="margin-top:10px;align-items:end">
+      <div>
+        <label for="cloud-pinned-select">5. Permanently saved (max 2 — kept forever until you delete or replace them)</label>
+        <select id="cloud-pinned-select"><option value="">— sign in to view —</option></select>
+      </div>
+      <div class="btn-row" style="margin:0 0 3px">
+        <button type="button" class="btn btn-out" onclick="cloudLoadPinnedSelected()">Load Data</button>
+        <button type="button" class="btn btn-out" onclick="cloudDeletePinnedSelected()">Delete</button>
       </div>
     </div>
   </div>
@@ -905,6 +995,11 @@ html, body {
     <button class="btn btn-out" onclick="clearAll()">Clear All</button>
   </div>
   <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImport(event)">
+
+  <div class="app-footer-bar">
+    <button type="button" class="manual-refresh-btn ag-signout-variant app-signout-btn" onclick="fbSignOut()" title="Sign out of your account" style="display:none;">⎋ Log out</button>
+    <button type="button" class="manual-refresh-btn" onclick="manualRefreshAll()" title="Clear all data and start over">⟳ Refresh</button>
+  </div>
 </div>
 
 <!-- ==================== STEP 2: EDITOR + PREVIEW ==================== -->
@@ -1056,6 +1151,11 @@ html, body {
         </select>
         <button type="button" class="btn btn-out" style="margin-top:5px;font-size:11.5px;padding:5px 9px;" onclick="addCustomSection('e')">+ Add Section</button>
         <div id="e-custom-list" style="margin-top:6px;"></div>
+      </div>
+
+      <div class="app-footer-bar">
+        <button type="button" class="manual-refresh-btn ag-signout-variant app-signout-btn" onclick="fbSignOut()" title="Sign out of your account" style="display:none;">⎋ Log out</button>
+        <button type="button" class="manual-refresh-btn" onclick="manualRefreshAll()" title="Clear all data and start over">⟳ Refresh</button>
       </div>
     </aside>
 
@@ -2893,9 +2993,11 @@ function clearAll() {
   fillWizardFromData();
 }
 
-/* Manual "Refresh" buttons (top + bottom, fixed on screen). Chrome's pull-to-refresh gesture is disabled
-   via CSS (overscroll-behavior-y: contain) so an accidental pull no longer wipes the form; this button is
-   the only intentional way to reset everything back to a blank state now. */
+/* Manual "Refresh" button — sits in the footer bar at the bottom of both the wizard
+   page and the editor page (not fixed/floating). Chrome's pull-to-refresh gesture is
+   disabled via CSS (overscroll-behavior-y: contain) so an accidental pull no longer
+   wipes the form; this button is the only intentional way to reset everything back
+   to a blank state now. */
 function manualRefreshAll() {
   if (!confirm('This clears ALL entered data (wizard and editor) and starts a blank resume. This cannot be undone. Continue?')) return;
   data = {
@@ -4456,6 +4558,9 @@ pdfimpHistoryRender();
               match /history/{versionId} {
                 allow read, write: if request.auth != null && request.auth.uid == uid;
               }
+              match /pinned/{pinnedId} {
+                allow read, write: if request.auth != null && request.auth.uid == uid;
+              }
             }
           }
         }
@@ -4470,6 +4575,7 @@ const firebaseConfig = {
   appId: "1:86382253388:web:2ad9cbe9603f5e8fffabe9"
 };
 const HISTORY_CAP = 3;
+const PINNED_CAP = 2; /* separate, user-controlled "keep forever" slots — never auto-rotated */
 let fbUser = null, fbApproved = false, fbReady = false, cloudSaveTimer = null;
 
 function fbConfigured() {
@@ -4483,69 +4589,113 @@ function initFirebase() {
   firebase.auth().onAuthStateChanged(onAuthChange);
 }
 
-function setAuthGateMode(mode, msg) {
+/* Switches which panel of the auth gate is visible: 'login', 'signup', 'forgot',
+   'forgot-sent', 'checking', 'pending'. Each panel is its own self-contained step,
+   so "Forgot password?" only ever shows the email field — never the password box —
+   and account creation is its own separate screen from sign-in. */
+function agShowView(view, msg) {
   const gate = $('auth-gate');
   if (!gate) return;
-  gate.style.display = mode === 'hidden' ? 'none' : 'flex';
-  const m = gate.querySelector('.ag-msg');
-  if (m) m.textContent = msg || '';
-  gate.querySelectorAll('[data-ag-show]').forEach(btn => {
-    btn.style.display = (btn.getAttribute('data-ag-show') === mode) ? 'inline-flex' : 'none';
+  gate.style.display = 'flex';
+  gate.querySelectorAll('.ag-view').forEach(panel => {
+    panel.classList.toggle('active', panel.getAttribute('data-ag-view') === view);
   });
+  if (msg !== undefined) {
+    const active = gate.querySelector('.ag-view.active .ag-msg');
+    if (active) active.textContent = msg;
+  }
+  // Clear stale error/status text whenever we land on a fresh view.
+  gate.querySelectorAll('.ag-error').forEach(p => { p.textContent = ''; p.classList.remove('ok'); });
+}
+function agHideGate() { const gate = $('auth-gate'); if (gate) gate.style.display = 'none'; }
+
+function updateSignoutButtons(visible) {
+  document.querySelectorAll('.app-signout-btn').forEach(btn => { btn.style.display = visible ? 'inline-flex' : 'none'; });
 }
 
 async function onAuthChange(user) {
   fbUser = user;
-  const signoutBtn = document.getElementById('app-signout-btn');
   if (!user) {
     fbApproved = false;
-    setAuthGateMode('signed-out', 'Enter your email and a password to sign in — new here? Just enter any password and we\'ll set up your account.');
-    if (signoutBtn) signoutBtn.style.display = 'none';
+    agShowView('login');
+    updateSignoutButtons(false);
     return;
   }
-  setAuthGateMode('checking', 'Checking your access…');
+  agShowView('checking', 'Checking your access…');
   try {
     const snap = await firebase.firestore().collection('config').doc('allowlist').get();
     const emails = (snap.exists && Array.isArray(snap.data().emails)) ? snap.data().emails : [];
     fbApproved = emails.map(x => String(x).toLowerCase()).indexOf((user.email || '').toLowerCase()) !== -1;
   } catch (e) { fbApproved = false; }
   if (!fbApproved) {
-    setAuthGateMode('pending', 'Signed in as ' + (user.email || '') + '. This account is pending approval — you\'ll get access once it\'s activated.');
-    if (signoutBtn) signoutBtn.style.display = 'none';
+    agShowView('pending', 'Signed in as ' + (user.email || '') + '. This account is pending approval — you\'ll get access once it\'s activated.');
+    updateSignoutButtons(false);
     return;
   }
-  setAuthGateMode('hidden', '');
-  if (signoutBtn) signoutBtn.style.display = 'inline-flex';
+  agHideGate();
+  updateSignoutButtons(true);
   await loadCloudCurrent();
+  if (typeof cloudRefreshHistoryList === 'function') cloudRefreshHistoryList();
+  if (typeof cloudRefreshPinnedList === 'function') cloudRefreshPinnedList();
 }
 
-function fbContinue() {
+/* Sign in only — does NOT silently create an account. A user-not-found style
+   error points people to the separate "Create account" screen instead. */
+function fbLogin() {
   if (!fbReady) { alert('Cloud sign-in is not configured yet — fill in firebaseConfig first.'); return; }
-  const email = document.getElementById('ag-email').value.trim();
-  const password = document.getElementById('ag-password').value;
-  const err = document.getElementById('ag-error');
-  if (err) err.textContent = '';
-  if (!password || password.length < 6) { if (err) err.textContent = 'Password must be at least 6 characters.'; return; }
+  const email = document.getElementById('ag-login-email').value.trim();
+  const password = document.getElementById('ag-login-password').value;
+  const err = document.getElementById('ag-login-error');
+  if (err) { err.textContent = ''; err.classList.remove('ok'); }
+  if (!email) { if (err) err.textContent = 'Enter your email.'; return; }
+  if (!password) { if (err) err.textContent = 'Enter your password.'; return; }
   firebase.auth().signInWithEmailAndPassword(email, password)
     .catch(e => {
-      if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
-        firebase.auth().createUserWithEmailAndPassword(email, password)
-          .catch(e2 => { if (err) err.textContent = e2.message; });
-      } else {
-        if (err) err.textContent = e.message;
+      if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password') {
+        if (err) err.textContent = 'No account matches that email/password. New here? Use "Create account" below.';
+      } else if (err) {
+        err.textContent = e.message;
       }
     });
 }
-function fbForgotPassword() {
+
+/* Create account — separate, explicit step from sign-in. */
+function fbSignup() {
   if (!fbReady) { alert('Cloud sign-in is not configured yet — fill in firebaseConfig first.'); return; }
-  const email = document.getElementById('ag-email').value.trim();
-  const err = document.getElementById('ag-error');
-  if (err) err.textContent = '';
-  if (!email) { if (err) err.textContent = 'Enter your email above first, then tap "Forgot password?".'; return; }
-  firebase.auth().sendPasswordResetEmail(email)
-    .then(() => { if (err) { err.style.color = '#8ee6a8'; err.textContent = 'Password reset email sent — check your inbox.'; } })
-    .catch(e => { if (err) { err.style.color = '#f28b82'; err.textContent = e.message; } });
+  const email = document.getElementById('ag-signup-email').value.trim();
+  const password = document.getElementById('ag-signup-password').value;
+  const password2 = document.getElementById('ag-signup-password2').value;
+  const err = document.getElementById('ag-signup-error');
+  if (err) { err.textContent = ''; err.classList.remove('ok'); }
+  if (!email) { if (err) err.textContent = 'Enter your email.'; return; }
+  if (!password || password.length < 6) { if (err) err.textContent = 'Password must be at least 6 characters.'; return; }
+  if (password !== password2) { if (err) err.textContent = 'Passwords do not match.'; return; }
+  firebase.auth().createUserWithEmailAndPassword(email, password)
+    .catch(e => {
+      if (e.code === 'auth/email-already-in-use') {
+        if (err) err.textContent = 'An account already exists for that email — please sign in instead.';
+      } else if (err) {
+        err.textContent = e.message;
+      }
+    });
 }
+
+/* Forgot password — email only, as its own step. Never shows a password field. */
+function fbSendReset() {
+  if (!fbReady) { alert('Cloud sign-in is not configured yet — fill in firebaseConfig first.'); return; }
+  const email = document.getElementById('ag-forgot-email').value.trim();
+  const err = document.getElementById('ag-forgot-error');
+  if (err) { err.textContent = ''; err.classList.remove('ok'); }
+  if (!email) { if (err) err.textContent = 'Enter your email first.'; return; }
+  firebase.auth().sendPasswordResetEmail(email)
+    .then(() => {
+      const sentEmail = document.getElementById('ag-sent-email');
+      if (sentEmail) sentEmail.textContent = email;
+      agShowView('forgot-sent');
+    })
+    .catch(e => { if (err) err.textContent = e.message; });
+}
+
 function fbSignOut() { if (fbReady) firebase.auth().signOut(); }
 
 async function loadCloudCurrent() {
@@ -4583,13 +4733,176 @@ async function cloudSaveHistoryVersion(label) {
     await historyRef.add({ data: data, label: label || new Date().toLocaleString(), savedAt: firebase.firestore.FieldValue.serverTimestamp() });
     await firebase.firestore().collection('users').doc(fbUser.uid).set({ current: data, email: fbUser.email }, { merge: true });
   };
-  if (versions.length < HISTORY_CAP) { await commit(); return; }
+  if (versions.length < HISTORY_CAP) { await commit(); cloudRefreshHistoryList(); return; }
   const oldest = versions[0];
   const oldestLabel = (oldest.data() && oldest.data().label) || 'your oldest version';
   showRotateConfirm(oldestLabel, async confirmed => {
     if (!confirmed) return; // Cancel: nothing written or deleted
-    try { await oldest.ref.delete(); await commit(); } catch (e) { console.error('History rotation failed', e); }
+    try { await oldest.ref.delete(); await commit(); cloudRefreshHistoryList(); } catch (e) { console.error('History rotation failed', e); }
   });
+}
+
+/* Populates the "Cloud-synced versions" dropdown beside the History section with the
+   signed-in user's saved versions (capped at HISTORY_CAP = 3 — the oldest is rotated
+   out automatically, per cloudSaveHistoryVersion above). */
+async function cloudRefreshHistoryList() {
+  const sel = document.getElementById('cloud-history-select');
+  if (!sel) return;
+  if (!fbReady || !fbUser || !fbApproved) { sel.innerHTML = '<option value="">— sign in to view —</option>'; return; }
+  try {
+    const historyRef = firebase.firestore().collection('users').doc(fbUser.uid).collection('history');
+    const snap = await historyRef.orderBy('savedAt', 'desc').get();
+    if (snap.empty) { sel.innerHTML = '<option value="">— none saved yet —</option>'; return; }
+    sel.innerHTML = snap.docs.map(d => {
+      const v = d.data() || {};
+      const when = (v.savedAt && v.savedAt.toDate) ? v.savedAt.toDate().toLocaleString() : '';
+      const label = (v.label || 'Untitled') + (when ? ' — ' + when : '');
+      const safe = label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return '<option value="' + d.id + '">' + safe + '</option>';
+    }).join('');
+  } catch (e) {
+    console.error('Could not list cloud history', e);
+    sel.innerHTML = '<option value="">— could not load —</option>';
+  }
+}
+
+/* Loads the version chosen in the "Cloud-synced versions" dropdown into the working
+   form — the dedicated "Load Data" button beside the History section. */
+async function cloudLoadHistorySelected() {
+  const sel = document.getElementById('cloud-history-select');
+  const id = sel && sel.value;
+  if (!id) { alert('Choose a saved version from the list first.'); return; }
+  if (!fbReady || !fbUser || !fbApproved) { alert('Sign in to your account to load cloud-saved versions.'); return; }
+  try {
+    const doc = await firebase.firestore().collection('users').doc(fbUser.uid).collection('history').doc(id).get();
+    if (!doc.exists) { alert('That saved version could not be found — it may have been rotated out.'); return; }
+    const v = doc.data();
+    data = v.data;
+    fillWizardFromData();
+    if ($('editor').style.display === 'block') updatePreview();
+    if (typeof pdfimpMsg === 'function') pdfimpMsg('Loaded "' + (v.label || 'saved version') + '" from your cloud history.');
+  } catch (e) {
+    console.error('Could not load cloud history version', e);
+    alert('Could not load that version. Please try again.');
+  }
+}
+
+/* ============ PERMANENTLY SAVED VERSIONS (max 2, never auto-rotated) ============
+   Separate from the auto-rotating "Cloud-synced versions" (newest 3, oldest dropped
+   automatically). These stay exactly as the user left them until they explicitly
+   delete one or choose to replace one while pinning a new one. */
+
+async function cloudRefreshPinnedList() {
+  const sel = document.getElementById('cloud-pinned-select');
+  if (!sel) return;
+  if (!fbReady || !fbUser || !fbApproved) { sel.innerHTML = '<option value="">— sign in to view —</option>'; return; }
+  try {
+    const ref = firebase.firestore().collection('users').doc(fbUser.uid).collection('pinned');
+    const snap = await ref.orderBy('savedAt', 'desc').get();
+    if (snap.empty) { sel.innerHTML = '<option value="">— none saved yet —</option>'; return; }
+    sel.innerHTML = snap.docs.map(d => {
+      const v = d.data() || {};
+      const when = (v.savedAt && v.savedAt.toDate) ? v.savedAt.toDate().toLocaleString() : '';
+      const label = (v.label || 'Untitled') + (when ? ' — ' + when : '');
+      const safe = label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return '<option value="' + d.id + '">' + safe + '</option>';
+    }).join('');
+  } catch (e) {
+    console.error('Could not list permanently saved versions', e);
+    sel.innerHTML = '<option value="">— could not load —</option>';
+  }
+}
+
+async function cloudLoadPinnedSelected() {
+  const sel = document.getElementById('cloud-pinned-select');
+  const id = sel && sel.value;
+  if (!id) { alert('Choose a permanently saved version first.'); return; }
+  if (!fbReady || !fbUser || !fbApproved) { alert('Sign in to load your permanently saved versions.'); return; }
+  try {
+    const doc = await firebase.firestore().collection('users').doc(fbUser.uid).collection('pinned').doc(id).get();
+    if (!doc.exists) { alert('That saved version could not be found.'); return; }
+    const v = doc.data();
+    data = v.data;
+    fillWizardFromData();
+    if ($('editor').style.display === 'block') updatePreview();
+    if (typeof pdfimpMsg === 'function') pdfimpMsg('Loaded "' + (v.label || 'saved version') + '" from your permanently saved versions.');
+  } catch (e) {
+    console.error('Could not load permanently saved version', e);
+    alert('Could not load that version. Please try again.');
+  }
+}
+
+async function cloudDeletePinnedSelected() {
+  const sel = document.getElementById('cloud-pinned-select');
+  const id = sel && sel.value;
+  if (!id) { alert('Choose a permanently saved version to delete first.'); return; }
+  if (!fbReady || !fbUser || !fbApproved) return;
+  if (!confirm('Delete this permanently saved version? This cannot be undone.')) return;
+  try {
+    await firebase.firestore().collection('users').doc(fbUser.uid).collection('pinned').doc(id).delete();
+    cloudRefreshPinnedList();
+  } catch (e) {
+    console.error('Could not delete permanently saved version', e);
+    alert('Could not delete that version. Please try again.');
+  }
+}
+
+/* Pins whichever version is currently chosen in the rotating "Cloud-synced versions"
+   list (#4) into the permanent set (#5, max PINNED_CAP = 2). If both permanent slots
+   are already full, the user is asked which one to replace — nothing is deleted
+   without that explicit choice. */
+async function cloudPinSelected() {
+  const histSel = document.getElementById('cloud-history-select');
+  const histId = histSel && histSel.value;
+  if (!histId) { alert('Choose a version from "Cloud-synced versions" above first, then pin it.'); return; }
+  if (!fbReady || !fbUser || !fbApproved) { alert('Sign in to pin a version permanently.'); return; }
+  try {
+    const histDoc = await firebase.firestore().collection('users').doc(fbUser.uid).collection('history').doc(histId).get();
+    if (!histDoc.exists) { alert('That version could not be found.'); return; }
+    const v = histDoc.data();
+    const pinnedRef = firebase.firestore().collection('users').doc(fbUser.uid).collection('pinned');
+    const snap = await pinnedRef.orderBy('savedAt', 'asc').get();
+    const commitPin = async (replaceId) => {
+      if (replaceId) await pinnedRef.doc(replaceId).delete();
+      await pinnedRef.add({ data: v.data, label: v.label || 'Untitled', savedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      cloudRefreshPinnedList();
+    };
+    if (snap.size < PINNED_CAP) { await commitPin(null); return; }
+    showPinReplaceChoice(snap.docs, chosenId => { if (chosenId) commitPin(chosenId); });
+  } catch (e) {
+    console.error('Could not pin that version', e);
+    alert('Could not pin that version. Please try again.');
+  }
+}
+
+/* Small chooser modal: "you already have 2 permanent slots full — which do you want
+   to replace?" Cancel leaves both existing permanent versions untouched. */
+function showPinReplaceChoice(existingDocs, cb) {
+  let modal = $('pin-replace-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'pin-replace-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);';
+    document.body.appendChild(modal);
+  }
+  const optsHtml = existingDocs.map(d => {
+    const v = d.data() || {};
+    const label = (v.label || 'Untitled').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return '<button type="button" class="pr-choice" data-id="' + d.id + '" style="display:block;width:100%;text-align:left;padding:9px 12px;margin-bottom:6px;border-radius:6px;border:1px solid #ccc;background:#fff;cursor:pointer;">Replace: ' + label + '</button>';
+  }).join('');
+  modal.innerHTML =
+    '<div style="background:#fff;max-width:380px;width:90%;border-radius:10px;padding:20px;font-family:inherit;box-shadow:0 10px 40px rgba(0,0,0,.25);">' +
+      '<h3 style="margin:0 0 8px;font-size:15px;color:#1f2937;">You already have 2 permanently saved versions</h3>' +
+      '<p style="margin:0 0 12px;font-size:13px;color:#444;line-height:1.5;">Pick which one to replace, or cancel to keep both as they are.</p>' +
+      optsHtml +
+      '<button type="button" class="pr-cancel" style="display:block;width:100%;text-align:center;padding:8px 14px;margin-top:6px;border-radius:6px;border:1px solid #ccc;background:#f6f6f6;cursor:pointer;">Cancel</button>' +
+    '</div>';
+  modal.style.display = 'flex';
+  const cleanup = () => { modal.style.display = 'none'; };
+  modal.querySelectorAll('.pr-choice').forEach(btn => {
+    btn.onclick = () => { const id = btn.getAttribute('data-id'); cleanup(); cb(id); };
+  });
+  modal.querySelector('.pr-cancel').onclick = () => { cleanup(); cb(null); };
 }
 
 function showRotateConfirm(oldestLabel, cb) {
