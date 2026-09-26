@@ -504,6 +504,10 @@ html, body {
         style="background:#fff;color:#1f2937;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;">
         Continue
       </button>
+      <button type="button" onclick="fbForgotPassword()"
+        style="background:none;border:none;color:#8fa3b8;font-size:12px;text-decoration:underline;cursor:pointer;padding:4px;align-self:center;">
+        Forgot password?
+      </button>
     </div>
     <button type="button" onclick="fbSignOut()" data-ag-show="pending"
       style="display:inline-flex;background:transparent;color:#c7d0da;border:1px solid #46525f;
@@ -4531,6 +4535,16 @@ function fbContinue() {
         if (err) err.textContent = e.message;
       }
     });
+}
+function fbForgotPassword() {
+  if (!fbReady) { alert('Cloud sign-in is not configured yet — fill in firebaseConfig first.'); return; }
+  const email = document.getElementById('ag-email').value.trim();
+  const err = document.getElementById('ag-error');
+  if (err) err.textContent = '';
+  if (!email) { if (err) err.textContent = 'Enter your email above first, then tap "Forgot password?".'; return; }
+  firebase.auth().sendPasswordResetEmail(email)
+    .then(() => { if (err) { err.style.color = '#8ee6a8'; err.textContent = 'Password reset email sent — check your inbox.'; } })
+    .catch(e => { if (err) { err.style.color = '#f28b82'; err.textContent = e.message; } });
 }
 function fbSignOut() { if (fbReady) firebase.auth().signOut(); }
 
