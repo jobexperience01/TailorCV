@@ -500,13 +500,9 @@ html, body {
       <input type="password" id="ag-password" placeholder="Password" autocomplete="current-password"
         style="padding:10px 12px;border-radius:8px;border:1px solid #46525f;background:#182430;color:#fff;font-size:14px;">
       <p id="ag-error" style="margin:0;font-size:12px;color:#f28b82;min-height:14px;"></p>
-      <button type="button" onclick="fbSignIn()"
+      <button type="button" onclick="fbContinue()"
         style="background:#fff;color:#1f2937;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;">
-        Sign In
-      </button>
-      <button type="button" onclick="fbSignUp()"
-        style="background:transparent;color:#c7d0da;border:1px solid #46525f;border-radius:8px;padding:9px 16px;font-size:13px;cursor:pointer;">
-        Create Account
+        Continue
       </button>
     </div>
     <button type="button" onclick="fbSignOut()" data-ag-show="pending"
@@ -518,6 +514,7 @@ html, body {
 </div>
 
 <button type="button" id="manual-refresh-top" class="manual-refresh-btn" onclick="manualRefreshAll()" title="Clear all data and start over">⟳ Refresh</button>
+<button type="button" id="app-signout-btn" class="manual-refresh-btn" onclick="fbSignOut()" title="Sign out of your account" style="display:none;left:10px;right:auto;top:10px;">⎋ Log out</button>
 
 <!-- ==================== STEP 1: WIZARD ==================== -->
 <div id="wizard">
@@ -4495,7 +4492,13 @@ function setAuthGateMode(mode, msg) {
 
 async function onAuthChange(user) {
   fbUser = user;
-  if (!user) { fbApproved = false; setAuthGateMode('signed-out', 'Please sign in with your Google account to use this resume editor.'); return; }
+  const signoutBtn = document.getElementById('app-signout-btn');
+  if (!user) {
+    fbApproved = false;
+    setAuthGateMode('signed-out', 'Enter your email and a password to sign in — new here? Just enter any password and we\'ll set up your account.');
+    if (signoutBtn) signoutBtn.style.display = 'none';
+    return;
+  }
   setAuthGateMode('checking', 'Checking your access…');
   try {
     const snap = await firebase.firestore().collection('config').doc('allowlist').get();
@@ -4503,31 +4506,31 @@ async function onAuthChange(user) {
     fbApproved = emails.map(x => String(x).toLowerCase()).indexOf((user.email || '').toLowerCase()) !== -1;
   } catch (e) { fbApproved = false; }
   if (!fbApproved) {
-    setAuthGateMode('pending', 'Signed in as ' + (user.email || '') + ', but this account is not approved yet. Ask the admin to add your email, then reload this page.');
+    setAuthGateMode('pending', 'Signed in as ' + (user.email || '') + '. This account is pending approval — you\'ll get access once it\'s activated.');
+    if (signoutBtn) signoutBtn.style.display = 'none';
     return;
   }
   setAuthGateMode('hidden', '');
+  if (signoutBtn) signoutBtn.style.display = 'inline-flex';
   await loadCloudCurrent();
 }
 
-function fbSignIn() {
-  if (!fbReady) { alert('Cloud sign-in is not configured yet — fill in firebaseConfig first.'); return; }
-  const email = document.getElementById('ag-email').value.trim();
-  const password = document.getElementById('ag-password').value;
-  const err = document.getElementById('ag-error');
-  if (err) err.textContent = '';
-  firebase.auth().signInWithEmailAndPassword(email, password)
-    .catch(e => { if (err) err.textContent = e.message; });
-}
-function fbSignUp() {
+function fbContinue() {
   if (!fbReady) { alert('Cloud sign-in is not configured yet — fill in firebaseConfig first.'); return; }
   const email = document.getElementById('ag-email').value.trim();
   const password = document.getElementById('ag-password').value;
   const err = document.getElementById('ag-error');
   if (err) err.textContent = '';
   if (!password || password.length < 6) { if (err) err.textContent = 'Password must be at least 6 characters.'; return; }
-  firebase.auth().createUserWithEmailAndPassword(email, password)
-    .catch(e => { if (err) err.textContent = e.message; });
+  firebase.auth().signInWithEmailAndPassword(email, password)
+    .catch(e => {
+      if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
+        firebase.auth().createUserWithEmailAndPassword(email, password)
+          .catch(e2 => { if (err) err.textContent = e2.message; });
+      } else {
+        if (err) err.textContent = e.message;
+      }
+    });
 }
 function fbSignOut() { if (fbReady) firebase.auth().signOut(); }
 
