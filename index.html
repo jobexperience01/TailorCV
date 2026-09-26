@@ -2956,6 +2956,10 @@ function pdfimpImport() {
   pdfimpHistoryRender();
   $('pdfimp-history').value = list[list.length - 1].id;
   $('pdfimp-person-name').value = '';
+  /* Also push this import into the cloud-synced "History" list (#4) — this is what
+     was missing before: without it, an imported resume never showed up there, so
+     there was nothing to select and pin permanently in #5. */
+  if (typeof cloudSaveHistoryVersion === 'function') cloudSaveHistoryVersion(personName);
   pdfimpMsg('Imported "' + personName + '" and saved to history (' + when + '). The form above has been filled in \u2014 review it, then click Generate Resume.', true);
 }
 
@@ -4762,7 +4766,9 @@ async function cloudRefreshHistoryList() {
     }).join('');
   } catch (e) {
     console.error('Could not list cloud history', e);
-    sel.innerHTML = '<option value="">— could not load —</option>';
+    sel.innerHTML = '<option value="">' + (e && e.code === 'permission-denied'
+      ? '— access denied: update Firestore rules —'
+      : '— could not load —') + '</option>';
   }
 }
 
@@ -4809,7 +4815,9 @@ async function cloudRefreshPinnedList() {
     }).join('');
   } catch (e) {
     console.error('Could not list permanently saved versions', e);
-    sel.innerHTML = '<option value="">— could not load —</option>';
+    sel.innerHTML = '<option value="">' + (e && e.code === 'permission-denied'
+      ? '— access denied: add the /pinned rule (see firebaseConfig comment) —'
+      : '— could not load —') + '</option>';
   }
 }
 
